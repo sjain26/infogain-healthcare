@@ -2,6 +2,10 @@
 
 A GenAI-powered solution for analyzing healthcare data using natural language queries. This system converts natural language questions into SQL/Python queries, executes them on separate datasets (joined dynamically), and generates descriptive insights.
 
+## 🌐 Live Demo
+
+**Try it now:** [https://infogain-healthcare.streamlit.app/](https://infogain-healthcare.streamlit.app/)
+
 ## 🎯 Overview
 
 This system addresses the challenge of extracting meaningful insights from complex healthcare datasets by:
@@ -242,5 +246,7 @@ python run_pipeline.py --query "test query"
 
 ---
 
-**Repository:** https://github.com/sjain26/infogain-healthcare
+**🌐 Live Demo:** [https://infogain-healthcare.streamlit.app/](https://infogain-healthcare.streamlit.app/)
+
+**📦 Repository:** https://github.com/sjain26/infogain-healthcare
 
