@@ -80,4 +80,6 @@ explore_excel.py
 *_test.py
 *_tests.py
 test_*.py
+TEST_RESULTS.md
+VERIFICATION_REPORT.md
 
