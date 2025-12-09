@@ -124,33 +124,30 @@ JOIN KEY: Patient_Number
     
     def _create_sql_generation_prompt(self, user_query: str) -> str:
         """Create prompt for SQL generation"""
-        system_prompt = f"""You are an expert SQL query generator for healthcare data analysis.
+        prompt = f"""Generate a SQL query for healthcare data analysis.
 
 {self.schema_description}
 
-INSTRUCTIONS:
-1. Generate ONLY valid SQLite SQL queries based on the user's question
-2. Use JOIN when data from both tables is needed
-3. Use appropriate aggregations (COUNT, AVG, SUM, MAX, MIN) when needed
-4. Use WHERE clauses for filtering
-5. Return ONLY the SQL query, no explanations
-6. Use proper column names as specified in the schema
-7. For patient-specific queries, use Patient_Number for filtering
-8. Always use table aliases: h1 for health_dataset_1, h2 for health_dataset_2
+Rules:
+- Generate ONLY SQL query, no explanations
+- Use JOIN when combining both tables
+- Use COUNT, AVG, SUM for aggregations
+- Use WHERE for filtering
+- Table aliases: h1 for health_dataset_1, h2 for health_dataset_2
 
-EXAMPLES:
-User: "How many patients have abnormal blood pressure?"
+Examples:
+Q: "How many patients have abnormal blood pressure?"
 SQL: SELECT COUNT(*) FROM health_dataset_1 WHERE Blood_Pressure_Abnormality = 1;
 
-User: "What is the average physical activity for patients with high stress?"
+Q: "Average physical activity for high stress patients?"
 SQL: SELECT AVG(h2.Physical_activity) FROM health_dataset_1 h1 JOIN health_dataset_2 h2 ON h1.Patient_Number = h2.Patient_Number WHERE h1.Level_of_Stress = 3;
 
-User: "Show me patients above 60 years with BMI over 30"
+Q: "Patients above 60 with BMI > 30"
 SQL: SELECT Patient_Number, Age, BMI FROM health_dataset_1 WHERE Age > 60 AND BMI > 30;
 
-Now generate SQL for this query:"""
-        
-        return f"{system_prompt}\n\nUser Query: {user_query}\n\nSQL Query:"
+Question: {user_query}
+SQL:"""
+        return prompt
     
     def _extract_sql_from_response(self, response: str) -> str:
         """Extract SQL query from LLM response"""
@@ -217,22 +214,13 @@ Now generate SQL for this query:"""
         else:
             results_summary = f"Total rows: {len(query_results)}\nFirst 10 rows:\n{query_results.head(10).to_string(index=False)}\n... (showing first 10 of {len(query_results)} total rows)"
         
-        prompt = f"""You are a healthcare data analyst. Based on the user's question and the EXACT query results, provide a clear, insightful response.
+        prompt = f"""Analyze the healthcare data query results and provide insights.
 
-CRITICAL INSTRUCTIONS:
-- Use ONLY the exact numbers from the results below
-- If a count and total are provided, you may calculate the percentage
-- Be precise and accurate - do not estimate or guess
-- Write in a natural, professional manner
+User Question: {user_query}
+SQL Query: {sql_query}
+Results: {results_summary}
 
-User's Question: {user_query}
-
-SQL Query Executed:
-{sql_query}
-
-{results_summary}
-
-Provide a clear, concise analysis (2-3 paragraphs) using the exact numbers above:"""
+Provide a clear analysis (2-3 paragraphs) using the exact numbers from results above."""
         
         return prompt
     

@@ -1,16 +1,12 @@
 """
-Main script to run the complete pipeline
-Can be used for testing or batch processing
+Main script to run the pipeline
 """
 import argparse
 from genai_pipeline import HealthcareGenAI
-from evaluation import Evaluator
-import json
 
 def main():
     parser = argparse.ArgumentParser(description='Healthcare GenAI Analytics Pipeline')
     parser.add_argument('--query', type=str, help='Single query to process')
-    parser.add_argument('--evaluate', action='store_true', help='Run evaluation suite')
     parser.add_argument('--interactive', action='store_true', help='Interactive mode')
     
     args = parser.parse_args()
@@ -32,25 +28,6 @@ def main():
         print(f"\nInsights:\n{result.get('insights', 'N/A')}")
         if result.get('error'):
             print(f"\nError: {result['error']}")
-    
-    elif args.evaluate:
-        # Run evaluation
-        print("\nRunning evaluation suite...")
-        evaluator = Evaluator(pipeline)
-        results = evaluator.run_evaluation_suite()
-        
-        print("\n" + "="*80)
-        print("EVALUATION RESULTS")
-        print("="*80)
-        print(f"Total Queries: {results['total_queries']}")
-        print(f"Average SQL Score: {results['avg_sql_score']:.3f}")
-        print(f"Average Relevance: {results['avg_relevance']:.3f}")
-        print(f"Average Coherence: {results['avg_coherence']:.3f}")
-        print(f"Average Safety: {results['avg_safety']:.3f}")
-        print(f"Overall Score: {results['avg_overall_score']:.3f}")
-        
-        # Save report
-        evaluator.save_evaluation_report(results)
     
     elif args.interactive:
         # Interactive mode

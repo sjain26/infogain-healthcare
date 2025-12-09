@@ -4,7 +4,6 @@ Streamlit Web Interface for Healthcare GenAI Analytics
 import streamlit as st
 import pandas as pd
 from genai_pipeline import HealthcareGenAI
-from evaluation import Evaluator
 
 # Page configuration
 st.set_page_config(
@@ -100,13 +99,8 @@ def main():
         
         st.header("About")
         st.markdown("""
-        This system uses GenAI to analyze healthcare data and provide insights.
-        
-        **Features:**
-        - Natural language query interface
-        - SQL query generation
-        - Data-driven insights
-        - Safety checks and ethical considerations
+        GenAI-powered healthcare data analytics.
+        Ask questions in natural language.
         """)
         
         st.header("Sample Queries")
@@ -114,9 +108,6 @@ def main():
             "How many patients have abnormal blood pressure?",
             "What is the average age of patients with chronic kidney disease?",
             "Show me patients above 60 years with BMI over 30",
-            "What is the average physical activity for patients with high stress?",
-            "Find patients who smoke and have abnormal blood pressure",
-            "What is the distribution of stress levels among female patients?",
         ]
         
         for query in sample_queries:
@@ -217,22 +208,6 @@ def main():
                 st.subheader("💡 Generated Insights")
                 st.markdown(result['insights'])
             
-            # Evaluation (optional)
-            if st.checkbox("Show Evaluation Metrics"):
-                evaluator = Evaluator(pipeline)
-                evaluation = evaluator.evaluate_query(user_query, result)
-                
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric("SQL Score", f"{evaluation['sql_metrics'].get('syntax_score', 0):.2f}")
-                with col2:
-                    st.metric("Relevance", f"{evaluation['relevance_metrics'].get('keyword_overlap', 0):.2f}")
-                with col3:
-                    st.metric("Coherence", f"{evaluation['coherence_metrics'].get('readability_score', 0):.2f}")
-                with col4:
-                    st.metric("Safety", f"{evaluation['safety_metrics'].get('safety_score', 0):.2f}")
-                
-                st.metric("Overall Score", f"{evaluation['overall_score']:.2f}")
     
    
 
