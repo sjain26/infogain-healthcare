@@ -181,9 +181,13 @@ def main():
                 st.error(f"Error: {result['error']}")
                 return
             
-            # SQL Query
-            with st.expander("🔧 Generated SQL Query", expanded=False):
-                st.code(result.get('sql_query', 'N/A'), language='sql')
+            # Query (SQL or Python)
+            if result.get('sql_query'):
+                with st.expander("🔧 Generated SQL Query", expanded=False):
+                    st.code(result.get('sql_query', 'N/A'), language='sql')
+            if result.get('python_query'):
+                with st.expander("🐍 Generated Python Query", expanded=False):
+                    st.code(result.get('python_query', 'N/A'), language='python')
             
             # Query Results
             if result.get('query_results') is not None:

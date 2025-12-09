@@ -265,46 +265,148 @@ Provide a clear analysis (2-3 paragraphs) using the exact numbers from results a
         except Exception as e:
             return f"Error generating insights: {str(e)}"
     
-    def process_query(self, user_query: str) -> Dict:
+    def generate_python_query(self, user_query: str) -> Tuple[str, Optional[str]]:
+        """Generate Python pandas query from natural language (alternative to SQL)"""
+        try:
+            prompt = f"""Generate a Python pandas query for healthcare data analysis.
+
+{self.schema_description}
+
+Rules:
+- Generate ONLY Python code using pandas, no explanations
+- Use df1 for health_dataset_1, df2 for health_dataset_2
+- Use merge() for joining dataframes on Patient_Number
+- Use appropriate pandas operations (filter, groupby, agg, etc.)
+- Return ONLY the Python code, no markdown
+
+Examples:
+Q: "How many patients have abnormal blood pressure?"
+Code: df1[df1['Blood_Pressure_Abnormality'] == 1].shape[0]
+
+Q: "Average physical activity for high stress patients?"
+Code: df1[df1['Level_of_Stress'] == 3].merge(df2, on='Patient_Number')['Physical_activity'].mean()
+
+Q: "Patients above 60 with BMI > 30"
+Code: df1[(df1['Age'] > 60) & (df1['BMI'] > 30)][['Patient_Number', 'Age', 'BMI']]
+
+Question: {user_query}
+Code:"""
+            
+            messages = [
+                SystemMessage(content="You are an expert Python pandas query generator."),
+                HumanMessage(content=prompt)
+            ]
+            response = self._call_llm(messages)
+            python_code = self._extract_python_from_response(response.content)
+            
+            return python_code, None
+        except Exception as e:
+            return None, f"Error generating Python query: {str(e)}"
+    
+    def _extract_python_from_response(self, response: str) -> str:
+        """Extract Python code from LLM response"""
+        response = re.sub(r'```python\n?', '', response, flags=re.IGNORECASE)
+        response = re.sub(r'```\n?', '', response)
+        response = response.strip()
+        
+        # Find Python code block
+        if 'df1' in response or 'df2' in response or 'pd.' in response:
+            return response
+        
+        return response
+    
+    def execute_python_query(self, python_code: str) -> Tuple[pd.DataFrame, Optional[str]]:
+        """Execute Python pandas query and return results"""
+        try:
+            # Load dataframes
+            df1, df2 = self.preprocessor.load_datasets()
+            df1 = self.preprocessor.clean_dataset_1(df1)
+            df2 = self.preprocessor.clean_dataset_2(df2)
+            
+            # Execute Python code in safe environment
+            safe_dict = {
+                'pd': pd,
+                'df1': df1,
+                'df2': df2,
+                'np': __import__('numpy')
+            }
+            
+            # Execute and get result
+            exec_result = {}
+            exec(python_code, {"__builtins__": {}}, safe_dict)
+            
+            # Try to get result from common variable names
+            for var in ['result', 'output', 'data', 'df']:
+                if var in safe_dict:
+                    result = safe_dict[var]
+                    if isinstance(result, pd.DataFrame):
+                        return result, None
+                    elif isinstance(result, (int, float)):
+                        return pd.DataFrame({f'result': [result]}), None
+            
+            return pd.DataFrame(), "Could not extract result from Python query"
+        except Exception as e:
+            return None, f"Error executing Python query: {str(e)}"
+    
+    def process_query(self, user_query: str, use_python: bool = False) -> Dict:
         """
         Main method to process user query end-to-end
         
         CRITICAL: This implements the required architecture:
-        1. Generate SQL query (INTERMEDIATE OUTPUT)
+        1. Generate SQL/Python query (INTERMEDIATE OUTPUT)
         2. Execute query to fetch SUBSET of data
         3. Generate insights from SUBSET only (NOT full datasets)
         
         Args:
             user_query: Natural language query
+            use_python: If True, use Python instead of SQL
         """
         result = {
             'user_query': user_query,
             'sql_query': None,
+            'python_query': None,
             'query_results': None,
             'insights': None,
             'error': None
         }
         
-        # Step 1: Generate SQL query (INTERMEDIATE OUTPUT - as per requirements)
-        sql_query, error = self.generate_sql_query(user_query)
-        if error:
-            result['error'] = error
-            return result
-        result['sql_query'] = sql_query
+        # Step 1: Generate SQL or Python query (INTERMEDIATE OUTPUT - as per requirements)
+        if use_python:
+            python_query, error = self.generate_python_query(user_query)
+            if error:
+                result['error'] = error
+                return result
+            result['python_query'] = python_query
+            
+            # Step 2: Execute Python query to fetch SUBSET of data
+            query_results, error = self.execute_python_query(python_query)
+            if error:
+                result['error'] = error
+                return result
+            result['query_results'] = query_results
+            
+            # Step 3: Generate insights from SUBSET only
+            insights = self.generate_insights(user_query, f"Python: {python_query}", query_results)
+        else:
+            sql_query, error = self.generate_sql_query(user_query)
+            if error:
+                result['error'] = error
+                return result
+            result['sql_query'] = sql_query
+            
+            # Step 2: Execute SQL query to fetch SUBSET of data (NOT full datasets)
+            query_results, error = self.execute_query(sql_query)
+            if error:
+                result['error'] = error
+                return result
+            
+            result['query_results'] = query_results
+            
+            # Step 3: Generate insights from SUBSET only
+            # NOTE: Only the query results (subset) are sent to LLM, NOT the full datasets
+            insights = self.generate_insights(user_query, sql_query, query_results)
         
-        # Step 2: Execute query to fetch SUBSET of data (NOT full datasets)
-        query_results, error = self.execute_query(sql_query)
-        if error:
-            result['error'] = error
-            return result
-        
-        result['query_results'] = query_results
-        
-        # Step 3: Generate insights from SUBSET only
-        # NOTE: Only the query results (subset) are sent to LLM, NOT the full datasets
-        insights = self.generate_insights(user_query, sql_query, query_results)
         result['insights'] = insights
-        
         return result
     
     def close(self):
