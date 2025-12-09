@@ -2,9 +2,8 @@
 GenAI Pipeline for Healthcare Data Analytics
 Converts natural language queries to SQL, executes queries, and generates insights
 """
-import os
 import re
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Tuple, Optional
 import pandas as pd
 try:
     from langchain_openai import ChatOpenAI
@@ -192,43 +191,31 @@ Now generate SQL for this query:"""
     
     def _create_insight_generation_prompt(self, user_query: str, sql_query: str, query_results: pd.DataFrame) -> str:
         """Create prompt for generating natural language insights"""
-        # Format query results more clearly
-        if len(query_results) == 0:
-            results_str = "No results found"
-        elif len(query_results) == 1 and len(query_results.columns) == 1:
-            # Single value result (like COUNT, AVG)
-            col_name = query_results.columns[0]
-            value = query_results.iloc[0, 0]
-            results_str = f"Result: {col_name} = {value}"
-        elif len(query_results) <= 10:
-            # Small result set - show all
-            results_str = query_results.to_string(index=False)
-        else:
-            # Large result set - show summary
-            results_str = f"Total rows: {len(query_results)}\nFirst 10 rows:\n{query_results.head(10).to_string(index=False)}\n... (showing first 10 of {len(query_results)} total rows)"
-        
         # Calculate total patients for context if needed
         total_patients = None
         try:
             if "COUNT" in sql_query.upper() and "WHERE" in sql_query.upper():
-                # Try to get total count for percentage calculation
                 total_df = self.preprocessor.execute_query("SELECT COUNT(*) as total FROM health_dataset_1")
                 if len(total_df) > 0:
                     total_patients = total_df.iloc[0, 0]
         except:
             pass
         
-        # Format results more clearly for LLM
-        if len(query_results) == 1 and len(query_results.columns) == 1:
-            # Single value - extract it clearly
+        # Format results clearly for LLM
+        if len(query_results) == 0:
+            results_summary = "No results found"
+        elif len(query_results) == 1 and len(query_results.columns) == 1:
+            # Single value result (like COUNT, AVG)
             value = query_results.iloc[0, 0]
             col_name = query_results.columns[0]
             results_summary = f"The query returned: {col_name} = {value}"
             if total_patients and "COUNT" in col_name.upper():
                 percentage = (value / total_patients * 100) if total_patients > 0 else 0
                 results_summary += f"\nThis represents {value} out of {total_patients} total patients ({percentage:.1f}%)"
+        elif len(query_results) <= 10:
+            results_summary = f"Query Results:\n{query_results.to_string(index=False)}"
         else:
-            results_summary = f"Query Results:\n{results_str}"
+            results_summary = f"Total rows: {len(query_results)}\nFirst 10 rows:\n{query_results.head(10).to_string(index=False)}\n... (showing first 10 of {len(query_results)} total rows)"
         
         prompt = f"""You are a healthcare data analyst. Based on the user's question and the EXACT query results, provide a clear, insightful response.
 
@@ -290,47 +277,32 @@ Provide a clear, concise analysis (2-3 paragraphs) using the exact numbers above
         except Exception as e:
             return f"Error generating insights: {str(e)}"
     
-    def process_query(self, user_query: str, use_python: bool = False) -> Dict:
+    def process_query(self, user_query: str) -> Dict:
         """
         Main method to process user query end-to-end
         
         CRITICAL: This implements the required architecture:
-        1. Generate SQL/Python query (INTERMEDIATE OUTPUT)
+        1. Generate SQL query (INTERMEDIATE OUTPUT)
         2. Execute query to fetch SUBSET of data
         3. Generate insights from SUBSET only (NOT full datasets)
         
         Args:
             user_query: Natural language query
-            use_python: If True, use Python query instead of SQL
         """
         result = {
             'user_query': user_query,
             'sql_query': None,
-            'python_query': None,
-            'query_type': 'python' if use_python else 'sql',
             'query_results': None,
             'insights': None,
             'error': None
         }
         
-        # Step 1: Generate SQL/Python query (INTERMEDIATE OUTPUT - as per requirements)
-        if use_python:
-            python_query, error = self.generate_python_query(user_query)
-            if error:
-                result['error'] = error
-                return result
-            result['python_query'] = python_query
-            # For Python queries, we'd need to execute them differently
-            # For now, we'll use SQL as primary method
-            result['error'] = "Python query execution not yet implemented. Using SQL instead."
-            use_python = False
-        
-        if not use_python:
-            sql_query, error = self.generate_sql_query(user_query)
-            if error:
-                result['error'] = error
-                return result
-            result['sql_query'] = sql_query
+        # Step 1: Generate SQL query (INTERMEDIATE OUTPUT - as per requirements)
+        sql_query, error = self.generate_sql_query(user_query)
+        if error:
+            result['error'] = error
+            return result
+        result['sql_query'] = sql_query
         
         # Step 2: Execute query to fetch SUBSET of data (NOT full datasets)
         query_results, error = self.execute_query(sql_query)

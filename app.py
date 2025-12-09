@@ -5,8 +5,6 @@ import streamlit as st
 import pandas as pd
 from genai_pipeline import HealthcareGenAI
 from evaluation import Evaluator
-import time
-import os
 
 # Page configuration
 st.set_page_config(
@@ -236,15 +234,7 @@ def main():
                 
                 st.metric("Overall Score", f"{evaluation['overall_score']:.2f}")
     
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style='text-align: center; color: #666;'>
-        <p>⚠️ <strong>Disclaimer:</strong> This system provides descriptive analytics only. 
-        It does not provide medical diagnoses or treatment recommendations. 
-        Always consult with healthcare professionals for medical advice.</p>
-    </div>
-    """, unsafe_allow_html=True)
+   
 
 if __name__ == "__main__":
     main()
