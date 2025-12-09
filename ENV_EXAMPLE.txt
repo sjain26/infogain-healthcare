@@ -1,51 +1,46 @@
-# OpenAI API Key (if using OpenAI models)
-OPENAI_API_KEY=your_openai_api_key_here
+# Healthcare GenAI Analytics System - Environment Variables
+# Copy this file to .env and fill in your values
 
-# Alternative: Hugging Face API Key (if using Hugging Face models)
-HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+# ============================================
+# GenAI Model Configuration
+# ============================================
 
-# Model Configuration
-MODEL_NAME=gpt-3.5-turbo
-# Alternative models: gpt-4, llama-2, mistral, etc.
+# Model Provider (options: groq, openai)
+MODEL_PROVIDER=groq
 
-# SQL Database Configuration (for loading actual datasets)
-# The system will load data from SQL database first, then fallback to Excel/CSV files
+# Model Name
+# For Groq: meta-llama/llama-4-scout-17b-16e-instruct
+# For OpenAI: gpt-3.5-turbo or gpt-4
+MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct
+
+# API Keys
+GROQ_API_KEY=your_groq_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here  # Optional, only if using OpenAI
+
+# ============================================
+# SQL Database Configuration (Optional)
+# ============================================
+# Leave empty to use sample Excel dataset
+
+# Database Type (options: mysql, postgresql, sqlserver, sqlite)
 SQL_DB_TYPE=mysql
-# Options: mysql, postgresql, sqlserver, sqlite
 
+# Database Connection Details
 SQL_HOST=localhost
 SQL_PORT=3306
-# Default ports: MySQL=3306, PostgreSQL=5432, SQL Server=1433
-
 SQL_USER=root
 SQL_PASSWORD=your_password_here
 SQL_DATABASE=healthcare
 
-# Table names in your SQL database
+# Table Names
 SQL_TABLE_1=health_dataset_1
 SQL_TABLE_2=health_dataset_2
 
-# Example for PostgreSQL:
-# SQL_DB_TYPE=postgresql
-# SQL_HOST=localhost
-# SQL_PORT=5432
-# SQL_USER=postgres
-# SQL_PASSWORD=your_password
-# SQL_DATABASE=healthcare
-
-# Example for SQL Server:
-# SQL_DB_TYPE=sqlserver
-# SQL_HOST=localhost
-# SQL_PORT=1433
-# SQL_USER=sa
-# SQL_PASSWORD=your_password
-# SQL_DATABASE=healthcare
-
-# Example for SQLite:
-# SQL_DB_TYPE=sqlite
-# SQL_HOST=
-# SQL_PORT=
-# SQL_USER=
-# SQL_PASSWORD=
-# SQL_DATABASE=/path/to/database.db
-
+# ============================================
+# Notes
+# ============================================
+# 1. If SQL configuration is empty, system will use sample Excel file (lu1828272yg3dhb.xlsm)
+# 2. For MySQL, install: pip install pymysql
+# 3. For PostgreSQL, install: pip install psycopg2-binary
+# 4. Get Groq API key from: https://console.groq.com/
+# 5. Get OpenAI API key from: https://platform.openai.com/api-keys
