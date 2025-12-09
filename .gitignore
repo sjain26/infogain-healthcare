@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Lock files
+.~lock.*
+*~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data files (if sensitive)
+data/*.csv
+data/*.xlsx
+data/*.db
+# Keep data directory structure but ignore contents
+!data/.gitkeep
+
+# IMPORTANT: Keep sample dataset and README
+!README.md
+!*.md
+!lu1828272yg3dhb.xlsm
+
+# Model files
+models/
+*.pkl
+*.h5
+*.pt
+*.pth
+
+# Logs
+logs/
+*.log
+
+# Streamlit
+.streamlit/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
