@@ -73,3 +73,11 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Testing and exploration files
+test_system.py
+verify_queries.py
+explore_excel.py
+*_test.py
+*_tests.py
+test_*.py
+
